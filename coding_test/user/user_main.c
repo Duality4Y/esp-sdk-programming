@@ -5,6 +5,7 @@
 #include "user_config.h"
 #include "user_interface.h"
 #include "driver/uart.h"
+#include "httpdespfs.h"
 
 #define user_procTaskPrio        0
 #define user_procTaskQueueLen    1
