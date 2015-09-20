@@ -12,6 +12,23 @@ os_event_t    user_procTaskQueue[user_procTaskQueueLen];
 static void loop(os_event_t *events);
 
 extern UartDevice UartDev;
+/*
+ function that together with 
+ os_install_getc1
+ lets me print with os_printf
+ source:
+ http://bbs.espressif.com/viewtopic.php?t=218
+*/
+void writebyte(uint8_t b)
+{
+  while (true)
+  {
+     uint32_t fifo_cnt = READ_PERI_REG(UART_STATUS(0)) & (UART_TXFIFO_CNT << UART_TXFIFO_CNT_S);
+     if ((fifo_cnt >> UART_TXFIFO_CNT_S & UART_TXFIFO_CNT) < 126)
+        break;
+  }
+  WRITE_PERI_REG(UART_FIFO(0) , b);
+}
 
 //Main code function
 static void ICACHE_FLASH_ATTR
@@ -24,8 +41,8 @@ loop(os_event_t *events)
     //     // os_printf("netmask: "IPSTR"\n", IP2STR(info.ip));
     //     // os_printf("gw: "IPSTR"\n", IP2STR(info.ip));
     // }
-    // os_printf("Hello\n\r");
-    uart0_sendStr("Hello\n\r");
+    os_printf("Hello\n\r");
+    // uart0_sendStr("Hello\n\r");
     static int i;
     for(i = 0; i < 1000; i++)
     {
@@ -50,6 +67,7 @@ user_init()
     UartDev.parity = NONE_BITS;
     UartDev.stop_bits = ONE_STOP_BIT;
     uart_init(BIT_RATE_115200, BIT_RATE_115200);
+    os_install_putc1(writebyte);
 
     //Set ap settings
     os_memcpy(&stationConf.ssid, ssid, 32);
