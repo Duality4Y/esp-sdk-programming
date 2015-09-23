@@ -5,7 +5,7 @@
 #include "user_config.h"
 #include "user_interface.h"
 #include "driver/uart.h"
-#include "httpdespfs.h"
+#include "stdlib.h"
 
 #define user_procTaskPrio        0
 #define user_procTaskQueueLen    1
@@ -13,6 +13,7 @@ os_event_t    user_procTaskQueue[user_procTaskQueueLen];
 static void loop(os_event_t *events);
 
 extern UartDevice UartDev;
+
 /*
  function that together with 
  os_install_getc1
@@ -35,17 +36,12 @@ void writebyte(uint8_t b)
 static void ICACHE_FLASH_ATTR
 loop(os_event_t *events)
 {
-    // struct ip_info *info;
-    // if(wifi_get_ip_info(STATION_IF, info))
-    // {
-    //     os_printf("ip: "IPSTR"\n");
-    //     // os_printf("netmask: "IPSTR"\n", IP2STR(info.ip));
-    //     // os_printf("gw: "IPSTR"\n", IP2STR(info.ip));
-    // }
-    os_printf("Hello\n\r");
-    // uart0_sendStr("Hello\n\r");
-    static int i;
-    for(i = 0; i < 1000; i++)
+    static int delay;
+    writebyte(0x02);
+    static char send[16] = "Gello World!1234";
+    uart0_sendStr(send);
+    writebyte(0x03);
+    for(delay = 0; delay < 200; delay++)
     {
         os_delay_us(1000);
     }
@@ -56,6 +52,8 @@ loop(os_event_t *events)
 void ICACHE_FLASH_ATTR
 user_init()
 {
+    system_set_os_print(false);
+    os_install_putc1(writebyte);
     char ssid[32] = SSID;
     char password[64] = SSID_PASSWORD;
     struct station_config stationConf;
@@ -67,8 +65,7 @@ user_init()
     UartDev.data_bits = EIGHT_BITS;
     UartDev.parity = NONE_BITS;
     UartDev.stop_bits = ONE_STOP_BIT;
-    uart_init(BIT_RATE_115200, BIT_RATE_115200);
-    os_install_putc1(writebyte);
+    uart_init(250000, 250000);
 
     //Set ap settings
     os_memcpy(&stationConf.ssid, ssid, 32);
