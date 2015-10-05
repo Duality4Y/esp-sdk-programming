@@ -6,6 +6,11 @@
 #include "user_interface.h"
 #include "driver/uart.h"
 
+#define BAUD (250000)
+
+#define STARTOFDATA (0x02)
+#define ENDOFDATA (0x03)
+
 #define user_procTaskPrio        0
 #define user_procTaskQueueLen    1
 os_event_t user_procTaskQueue[user_procTaskQueueLen];
@@ -125,42 +130,21 @@ void show_connection()
 
 void uart_send(void *arg)
 {
-    char str[100];
-    show_connection();
-    // static int count;
-    // static int scount;
-    // static char send[16] = "Gello World!1234";
-    // writebyte(0x02);
-    // uart0_sendStr(send);
-    // writebyte(0x03);
-    // update every second with a number
-    // count++;
-    // if(!(count % 50))
-    // {
-    //     scount++;
-    //     os_sprintf(send, "%d", scount);
-    //     show_connection();
-    //     loop(NULL);
-    // }
+    writebyte(0x82);
+    int i;
+    for(i = 0; i < 80; i++)
+    {
+        writebyte(i);
+    }
+    writebyte(0x83);
 }
 
 //Main code function
 inline static void
 loop(os_event_t *e)
 {
-    // if(e == NULL)
-    // {
-    //     return;
-    // }
-    // static char str[100];
-    // switch(e->sig)
-    // {
-    //     default:
-    //         os_sprintf(str, "e->sig: %d\n", e->sig);
-    //         uart0_sendStr(str);
-    //         break;
-    // }
-    uart0_sendStr("Hello world!");
+    // uart_send(NULL);
+    system_os_post(user_procTaskPrio, 0, 0 );
 }
 
 //Init function 
@@ -193,14 +177,14 @@ user_init()
     UartDev.parity = NONE_BITS;
     UartDev.stop_bits = ONE_STOP_BIT;
     //uart_init(250000, 250000);
-    uart_init(115200, 115200);
+    uart_init(BAUD, BAUD);
 
     // setup a timer to send things on uart periodicly (update matrix)
     os_timer_disarm(&uart_send_timer);
     // setup timer
     os_timer_setfn(&uart_send_timer, (os_timer_func_t *)uart_send, NULL);
     // arm timer
-    os_timer_arm(&uart_send_timer, 500, 1);
+    os_timer_arm(&uart_send_timer, 200, 1);
 
     //Start os task
     system_os_task(loop, user_procTaskPrio,user_procTaskQueue, user_procTaskQueueLen);
